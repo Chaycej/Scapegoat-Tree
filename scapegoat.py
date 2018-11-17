@@ -2,23 +2,6 @@ import sys
 import os
 import math
 import random
- 
-class Queue():
-	def __init__(self):
-		self.a = []
- 
-	def add(self, b):
-		self.a.insert(0, b)
- 
-	def poll(self):
-		return self.a.pop()
- 
-	def is_empty(self):
-		return self.a == []
- 
-	def size(self):
-		return len(self.a)
-
 
 class Node:
 
@@ -35,11 +18,13 @@ class Tree:
         self.tree_size = 0
         self.alpha = alpha
 
+    # Prints a tree using inorder traversal
     def print_tree(self):
         lst = []
         self.inorder(lst, self.root)
         print(lst)
 
+    # Equation used to check if a rebuild is triggered (depth > alpha_Log(tree_size))
     def alpha_log(self, size):
         return math.log(size, 1/self.alpha)
 
@@ -47,10 +32,9 @@ class Tree:
     def inorder(self, lst, root):
         if root is None:
             return
-        self.inorder(lst[:], root.left)
-        print("Inserting", root.val, "into list")
+        self.inorder(lst, root.left)
         lst.append(root)
-        self.inorder(lst[:], root.right)
+        self.inorder(lst, root.right)
 
     # Returns the number of nodes in a sub-tree
     def size(self, node):
@@ -58,20 +42,24 @@ class Tree:
             return 0
         return self.size(node.left) + self.size(node.right) + 1
 
-    # Builds a tree from a sorted list of Nodes
+    # Builds a binary search tree from a sorted list of Nodes
     def build_tree(self, arr):
-        if len(arr) <= 1:
-            return arr[0]
+        if not arr:
+            return None
         
         mid = int(len(arr)/2)
-        arr[mid].left = self.build_tree(arr[:mid])
-        if arr[mid].left != None:
-            arr[mid].left.parent = arr[mid]
-        arr[mid].right = self.build_tree(arr[mid:])
-        if arr[mid].right != None:
-            arr[mid].right.parent = arr[mid]
-        return arr[mid]
+        root = arr[mid]
+        root.left = self.build_tree(arr[:mid])
+        if root.left != None:
+            root.left.parent = root
+        root.right = self.build_tree(arr[mid+1:])
+        if root.right != None:
+            root.right.parent = root
+        return root
 
+    # Inserts an element into the tree. If the inserted node is too deep,
+    # a rebuild is triggered by finding the top-level node that has uneven left
+    # and right braches and rebuilding the tree.
     def insert(self, val):
         if self.root is None:
             self.root = Node(val)
@@ -81,6 +69,8 @@ class Tree:
             depth = 0
             current = self.root
             prev = None
+
+            # Find position to insert new node
             while current != None:
                 prev = current
                 if current.val > val:
@@ -104,6 +94,8 @@ class Tree:
 
                 scapegoat = prev
                 ancestor = prev
+
+                # Find highest level scapegoat node
                 while ancestor.parent is not None:
                     alpha_size = self.size(ancestor) * self.alpha
                     if self.size(ancestor.left) <= alpha_size and self.size(ancestor.right) <= alpha_size:
@@ -112,16 +104,20 @@ class Tree:
                         scapegoat = ancestor
                         ancestor = ancestor.parent
                 
-                # Found top-level scapegoat node
-                print("Scapegoat is", scapegoat.val)
+                # Found top-level scapegoat node, rebuild subtree
+                sg_parent = scapegoat.parent
                 node_list = []
                 self.inorder(node_list, scapegoat)
-                print("Node list size is", len(node_list))
-                for n in node_list:
-                    print("Node in list is", n.val)
-                sg_parent = scapegoat.parent
+                new_root = self.build_tree(node_list)
+                
+                if sg_parent.left == scapegoat:
+                    new_root.parent = sg_parent
+                    sg_parent.left = new_root
+                else:
+                    new_root.parent = sg_parent
+                    sg_parent.right = new_root
 
-
+    # Returns True if the value is found in the tree, False otherwise.
     def search(self, val):
         if self.root is None:
             return false
@@ -137,7 +133,7 @@ class Tree:
                     return True
             return False
 
-
+# Pretty print a tree
 def print_tree(node, level):
     if node is not None:
         print_tree(node.left, level+4)
@@ -156,7 +152,6 @@ def main():
         num = random.randint(1, 30)
         print("Inserting", num)
         tree.insert(num)
-        print("size is", tree.tree_size)
 
     print_tree(tree.root, 1)
 
