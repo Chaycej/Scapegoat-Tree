@@ -208,6 +208,9 @@ def main():
         cmd = cmd.split()
 
         if cmd[0] == "BuildTree":
+            if t is not None:
+                print("Already built tree! Ignoring this command")
+                continue
             print("Building tree")
             t = Tree(float(cmd[1]))
             t.insert(int(cmd[2]))
