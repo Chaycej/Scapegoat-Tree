@@ -1,0 +1,20 @@
+BuildTree 0.5, 10
+Insert 8
+Insert 11
+Insert 14
+Insert 19
+Insert 6
+Insert 5
+Insert 2
+Insert 1
+Insert 3
+Insert 4
+Print
+Search 1
+Search 100
+Delete 1
+Delete 100
+Delete 6
+Insert 6
+Print
+Done

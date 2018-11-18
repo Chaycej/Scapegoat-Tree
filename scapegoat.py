@@ -9,13 +9,13 @@ class Node:
         self.val = val
         self.left = None
         self.right = None
-        self.parent = None
 
 class Tree:
 
     def __init__(self, alpha):
         self.root = None
         self.tree_size = 0
+        self.max_node_count = 0;
         self.alpha = alpha
 
     # Prints a tree using inorder traversal
@@ -70,8 +70,11 @@ class Tree:
             current = self.root
             prev = None
 
+            parent_list = []
+
             # Find position to insert new node
             while current != None:
+                parent_list.append(current)
                 prev = current
                 if current.val > val:
                     current = current.left
@@ -81,41 +84,89 @@ class Tree:
 
             if prev.val > val:
                 prev.left = Node(val)
-                prev.left.parent = prev
             else:
                 prev.right = Node(val)
-                prev.right.parent = prev
 
             self.tree_size += 1
+            self.max_node_count = max(self.tree_size, self.max_node_count)
 
             # Node is too deep, rebuild tree
             if depth > math.floor(self.alpha_log(self.tree_size) + 1):
                 print("rebuild triggered after inserting", val)
 
-                scapegoat = prev
-                ancestor = prev
-
+                scapegoat = None
+                scapegoat_index = 0
+                
                 # Find highest level scapegoat node
-                while ancestor.parent is not None:
+                for i in range(1, len(parent_list)):
+                    ancestor = parent_list[i]
                     alpha_size = self.size(ancestor) * self.alpha
                     if self.size(ancestor.left) <= alpha_size and self.size(ancestor.right) <= alpha_size:
-                        ancestor = ancestor.parent
+                        continue
                     else:
                         scapegoat = ancestor
-                        ancestor = ancestor.parent
+                        scapegoat_index = i
+                        break
                 
                 # Found top-level scapegoat node, rebuild subtree
-                sg_parent = scapegoat.parent
+                print("Scapegoat is", scapegoat.val)
+                sg_parent = parent_list[scapegoat_index-1]
                 node_list = []
                 self.inorder(node_list, scapegoat)
                 new_root = self.build_tree(node_list)
                 
                 if sg_parent.left == scapegoat:
-                    new_root.parent = sg_parent
                     sg_parent.left = new_root
                 else:
-                    new_root.parent = sg_parent
                     sg_parent.right = new_root
+
+
+    # Returns the minimum node in a subtree
+    def find_min(self, node):
+        current = node
+        while current.left is not None:
+            current = current.left
+        return current
+
+
+    # Deletes a node in the tree and rebuilds the entire tree if the
+    # updated size is less than or equal to the max size times alpha.
+    def delete(self, val):
+        self.delete_node(val, self.root)
+        self.tree_size -= 1
+
+
+    # Auxiliary function for delete()
+    def delete_node(self, val, node):
+        if node is None:
+            return None
+        
+        if node.val < val:
+            node.right = self.delete_node(val, node.right)
+        elif node.val > val:
+            node.left = self.delete_node(val, node.left)
+        else:
+            if node.left is None:
+                return node.right
+            if node.right is None:
+                return node.left
+
+            # Replace node to be deleted with successor node 
+            temp = self.find_min(node.right)
+            print("min is", temp.val)
+            node.val = temp.val
+            node.right = self.delete_node(temp.val, node.right)
+
+        # Delete triggered rebuild of entire tree
+        if self.tree_size <= self.alpha * self.max_node_count:
+            print("Delete triggered rebuild of entire tree")
+            node_list = []
+            self.inorder(node_list, self.root)
+            self.root = self.build_tree(node_list)
+            return self.root
+        else:
+            return node
+
 
     # Returns True if the value is found in the tree, False otherwise.
     def search(self, val):
@@ -133,6 +184,7 @@ class Tree:
                     return True
             return False
 
+
 # Pretty print a tree
 def print_tree(node, level):
     if node is not None:
@@ -140,20 +192,40 @@ def print_tree(node, level):
         print(" "*level, node.val)
         print_tree(node.right, level+4)
 
-def BuildTree(alpha, key):
-    t = Tree(alpha)
-    t.insert(key)
-    return t
-
-
+    
 def main():
-    tree = Tree(0.57)
-    for i in range(1, 10):
-        num = random.randint(1, 30)
-        print("Inserting", num)
-        tree.insert(num)
+    
+    try:
+        file = open("tree.txt", mode="r")
+    except:
+        print("File must be named 'tree.txt'")
+        sys.exit(1)
 
-    print_tree(tree.root, 1)
+    cmd_list = [line.rstrip("\n").replace(",", "") for line in file]
+    t = None
+
+    for cmd in cmd_list:
+        cmd = cmd.split()
+
+        if cmd[0] == "BuildTree":
+            print("Building tree")
+            t = Tree(float(cmd[1]))
+            t.insert(int(cmd[2]))
+        elif cmd[0] == "Insert":
+            print("Inserting", cmd[1])
+            t.insert(int(cmd[1]))
+        elif cmd[0] == "Delete":
+            print("Deleting", cmd[1])
+            t.delete(int(cmd[1]))
+        elif cmd[0] == "Print":
+            print("Printing tree")
+            print_tree(t.root, 1)
+        elif cmd[0] == "Done":
+            print("Exiting program")
+            sys.exit(0)
+        else:
+            print("Unrecognized command, exiting program")
+            sys.exit(1)
 
 if __name__ == '__main__':
     main()
