@@ -50,11 +50,7 @@ class Tree:
         mid = int(len(arr)/2)
         root = arr[mid]
         root.left = self.build_tree(arr[:mid])
-        if root.left != None:
-            root.left.parent = root
         root.right = self.build_tree(arr[mid+1:])
-        if root.right != None:
-            root.right.parent = root
         return root
 
     # Inserts an element into the tree. If the inserted node is too deep,
@@ -220,6 +216,13 @@ def main():
         elif cmd[0] == "Delete":
             print("Deleting", cmd[1])
             t.delete(int(cmd[1]))
+        elif cmd[0] == "Search":
+            print("Searching for", cmd[1])
+            val = t.search(int(cmd[1]))
+            if val == True:
+                print("Found", cmd[1])
+            else:
+                print(cmd[1], "is not in the tree")
         elif cmd[0] == "Print":
             print("Printing tree")
             print_tree(t.root, 1)
@@ -227,6 +230,7 @@ def main():
             print("Exiting program")
             sys.exit(0)
         else:
+            print(cmd[0])
             print("Unrecognized command, exiting program")
             sys.exit(1)
 
